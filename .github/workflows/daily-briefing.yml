@@ -1,0 +1,49 @@
+# 网安每日早报
+
+name: 网安每日早报
+
+on:
+  schedule:
+    - cron: '0 23 * * *'        # UTC 23:00 = 北京时间 07:00
+  workflow_dispatch:              # 手动触发（测试用）
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 安装 Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Claude Code Agent 生成早报
+        env:
+          ANTHROPIC_BASE_URL: https://api.deepseek.com/anthropic
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
+          ANTHROPIC_MODEL: deepseek-v4-pro
+          ANTHROPIC_DEFAULT_OPUS_MODEL: deepseek-v4-pro
+          ANTHROPIC_DEFAULT_SONNET_MODEL: deepseek-v4-pro
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: deepseek-v4-flash
+          CLAUDE_CODE_SUBAGENT_MODEL: deepseek-v4-flash
+        run: |
+          claude -p "$(cat scripts/daily-briefing/prompt.md)" \n            --output-format text \n            --allowedTools WebSearch,WebFetch,Write,Bash(git:*)
+
+      - name: 推送到飞书
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: python scripts/daily-briefing/feishu_push.py
+
+      - name: 存档到仓库
+        run: |
+          git config user.name "Daily Briefing Bot"
+          git config user.email "bot@01-creative.com"
+          git add ctf-training/日报/
+          git diff --staged --quiet || git commit -m "📰 每日早报 $(date +%Y-%m-%d)"
+          git push

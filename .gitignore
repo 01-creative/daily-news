@@ -1,0 +1,17 @@
+# Dependencies
+__pycache__/
+*.pyc
+node_modules/
+
+# Secrets / Environment
+.env
+*.secret
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
