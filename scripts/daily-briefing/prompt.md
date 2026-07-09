@@ -65,9 +65,11 @@
   关键词的系统
   - 中优先级（标注 CNVD）：DoS/DDoS、未授权访问、信息泄露
   - 跳过：社会工程学攻击（银狐、钓鱼邮件）（这部分可以放到咨询部分）、小众专用工具漏洞（特定探针/监控工具）、需物理接触的攻击
+
+  - 增加对二进制方向漏洞的关注
   ### 2. 学术论文
   优先：arXiv cs.CR（新提交）
-  同时关注：arXiv cs.AI / cs.LG、ePrint、NDSS/USENIX/CCS/S&P/BlackHat/DEFCON
+  同时关注：arXiv cs.AI / cs.LG、ePrint、NDSS/USENIX/CCS/S&P/BlackHat/DEFCON同时关注：arXiv cs.AI / cs.LG、ePrint、NDSS/USENIX/CCS/S&P/BlackHat/DEFCON
   最新公开论文、官方博客公开研究、大型安全团队研究
 
   质量门槛（宁缺毋滥）：
