@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def main():
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = os.environ.get("BRIEFING_DATE", datetime.now().strftime("%Y-%m-%d"))
     filepath = Path(f"ctf-training/日报/{today}.md")
 
     if not filepath.exists():
