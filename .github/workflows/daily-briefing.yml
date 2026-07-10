@@ -27,6 +27,7 @@ jobs:
         shell: bash
         run: |
           export TZ=Asia/Shanghai
+          echo "BRIEFING_DATE=${TODAY}" >> $GITHUB_ENV
 
           TODAY=$(date +%F)
           START_TIME=$(date -d "yesterday 07:00" +"%Y-%m-%d %H:%M")
