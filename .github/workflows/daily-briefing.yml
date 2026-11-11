@@ -1,8 +1,9 @@
-name: Daily Briefing
+name: Weekly Briefing
 
 on:
   schedule:
-    - cron: "0 22 * * *"
+    # 每周六 06:00 Asia/Shanghai（周五 22:00 UTC）
+    - cron: "0 22 * * 5"
   workflow_dispatch:
 
 permissions:
@@ -11,7 +12,7 @@ permissions:
 jobs:
   briefing:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -27,37 +28,41 @@ jobs:
         shell: bash
         run: |
           export TZ=Asia/Shanghai
-          
+
           TODAY=$(date +%F)
-          START_TIME=$(date -d "yesterday 06:00" +"%Y-%m-%d %H:%M")
+          START_TIME=$(date -d "7 days ago 06:00" +"%Y-%m-%d %H:%M")
           END_TIME=$(date -d "today 06:00" +"%Y-%m-%d %H:%M")
+          WEEK_START=$(date -d "$START_TIME" +%F)
           echo "BRIEFING_DATE=${TODAY}" >> $GITHUB_ENV
+
+          mkdir -p ctf-training/周报
 
           sed \
             -e "s|{start_time}|${START_TIME}|g" \
             -e "s|{end_time}|${END_TIME}|g" \
+            -e "s|{week_start}|${WEEK_START}|g" \
             -e "s|{today}|${TODAY}|g" \
             scripts/daily-briefing/prompt.md \
             > /tmp/prompt.md
 
           {
             echo
-            echo "## 近三天早报（禁止重复报道）"
+            echo "## 上一期周报（仅用于去重）"
 
-            if ls ctf-training/日报/*.md >/dev/null 2>&1; then
-              ls -t ctf-training/日报/*.md | head -3 | while read -r f; do
-                echo
-                echo "---"
-                cat "$f"
-              done
+            if ls ctf-training/周报/*.md >/dev/null 2>&1; then
+              latest=$(ls -t ctf-training/周报/*.md | head -1)
+              echo
+              echo "---"
+              cat "$latest"
             else
-              echo "暂无历史日报。"
+              echo "暂无历史周报，本次不做去重。"
             fi
           } >> /tmp/prompt.md
 
           echo "Prompt built:"
-          echo "  Today : ${TODAY}"
-          echo "  Window: ${START_TIME} -> ${END_TIME}"
+          echo "  Today     : ${TODAY}"
+          echo "  Week start: ${WEEK_START}"
+          echo "  Window    : ${START_TIME} -> ${END_TIME}"
 
       - name: Generate briefing
         env:
@@ -81,13 +86,15 @@ jobs:
 
       - name: Archive
         run: |
-          git config user.name "Daily Briefing Bot"
+          export TZ=Asia/Shanghai
+
+          git config user.name "Weekly Briefing Bot"
           git config user.email "bot@01-creative.com"
 
-          git add ctf-training/日报/
+          git add ctf-training/周报/
 
           if ! git diff --cached --quiet; then
-            git commit -m "Daily briefing $(date +%F)"
+            git commit -m "Weekly briefing $(date +%F)"
             git push
           else
             echo "No changes to commit."
