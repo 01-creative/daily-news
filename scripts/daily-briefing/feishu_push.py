@@ -1,11 +1,20 @@
 """飞书推送模块 — 读取当周周报文件，推送到飞书群"""
 import os
+import re
 import sys
 import requests
 from datetime import datetime
 from pathlib import Path
 
-MAX_CHARS = 5000
+MAX_UNITS = 5000
+
+
+def count_units(text: str) -> int:
+    """汉字逐字计 1，英文/数字连续串计 1 词；URL、标点、空白、Markdown 符号不计。"""
+    text = re.sub(r"https?://\S+", " ", text)
+    cjk = len(re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]", text))
+    words = len(re.findall(r"[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*", text))
+    return cjk + words
 
 
 def main():
@@ -22,8 +31,11 @@ def main():
         print(f"❌ 周报内容过短 ({len(content)} chars)，可能是生成失败")
         sys.exit(1)
 
-    if len(content) > MAX_CHARS:
-        print(f"⚠️ 周报超出字数上限: {len(content)} > {MAX_CHARS} chars（照常推送，请检查提示词）")
+    units = count_units(content)
+    if units > MAX_UNITS:
+        print(f"⚠️ 周报超出字数上限: {units} > {MAX_UNITS}（汉字+单词，照常推送，请检查提示词）")
+    else:
+        print(f"ℹ️ 字数检查通过: {units} / {MAX_UNITS}（汉字+单词）")
 
     webhook = os.environ.get("FEISHU_WEBHOOK")
     if not webhook:
@@ -37,7 +49,7 @@ def main():
     )
     result = resp.json()
     if result.get("code") == 0:
-        print(f"✅ 周报已推送到飞书 ({len(content)} chars)")
+        print(f"✅ 周报已推送到飞书 ({len(content)} chars, {units} 汉字+单词)")
     else:
         print(f"❌ 飞书推送失败: {result}")
         sys.exit(1)
